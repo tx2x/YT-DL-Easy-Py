@@ -12,15 +12,15 @@ YT-DL Easy Py makes common video and playlist downloads easier to configure with
 - Detect YouTube links containing both a video ID and a playlist ID, then ask whether to download the video or playlist.
 - Read multiple URLs from a UTF-8 text file (one URL per line; blank lines and lines beginning with `#` are ignored).
 - Format-list highlighting to make codec and audio-language choices easier to scan:
-  - Audio tracks explicitly marked `original` or `default` by yt-dlp are highlighted with `★ ORIGINAL / DEFAULT`.
+  - Audio tracks explicitly marked `original` or `default` by yt-dlp are highlighted.
   - Video formats using AV1 (`av01`), H.264 (`avc1`), and VP9 (`vp9`) receive distinct labels.
   - The original yt-dlp format rows and format IDs remain visible and unchanged. The original/default marker is shown only when yt-dlp exposes that designation in its format-list output; the script does not guess which language is original.
 - After each session, choose whether to start another download; the default is **No** (press Enter to exit).
-- Interactive format presets:
-  - Best available quality, merging separate video and audio streams when required.
+- Interactive format choices:
+  - Best available video and audio streams (automatic selection).
+  - Choose video and audio format IDs separately, with best-available defaults.
   - Best single-file format without merging.
   - Best quality with MP4 as the preferred merge container.
-  - Manually entered yt-dlp format expression (including combinations such as `137+140`).
   - Audio only, audio extracted to MP3, or video only.
 - Confirmation prompts default to **Yes**; press Enter to accept.
 - Configurable output directory, optional Desktop output folder, FFmpeg path, and extra yt-dlp arguments.
@@ -186,4 +186,4 @@ The code was written using web version of ChatGPT 😁.
 
 ---
 
-**Project status:** Version `v1.1.0`. See [CHANGELOG.md](CHANGELOG.md) for release history. Bug reports and suggestions are welcome via GitHub Issues.
+**Project status:** Version `v1.2.0`. See [CHANGELOG.md](CHANGELOG.md) for release history. Bug reports and suggestions are welcome via GitHub Issues.

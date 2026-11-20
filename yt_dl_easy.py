@@ -5,7 +5,7 @@ import argparse, os, re, shlex, shutil, subprocess, sys
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-APP, VERSION = "YT-DL Easy Py", "1.1.0"
+APP, VERSION = "YT-DL Easy Py", "1.2.0"
 
 class UI:
     def __init__(self, color=True):
@@ -71,55 +71,78 @@ def read_urls(path):
         return [x.strip() for x in f if x.strip() and not x.lstrip().startswith("#")]
 
 def show_formats(exe, url, ui):
-    """Display yt-dlp's format table with visual codec/language cues."""
+    """Print yt-dlp's original format table, adding color without changing columns."""
     result = run([exe, "--no-warnings", "-F", url], capture=True)
     output = result.stdout or ""
     if not output:
         ui.warn("yt-dlp did not return a format list.")
         return
-    print("\nFormat legend:")
-    print("  ★ ORIGINAL / DEFAULT  Audio explicitly identified as original/default by yt-dlp")
-    print("  [AV1]                 av01 video codec")
-    print("  [H.264]               avc1 video codec")
-    print("  [VP9]                 vp9 video codec")
-    print()
+
+    print("\nFormat colors:")
+    print("  Original/default audio: green")
+    print("  AV1 (av01): magenta | H.264 (avc1): blue | VP9: cyan")
+    print("\nAvailable formats (original yt-dlp columns and IDs):\n")
+
     for line in output.splitlines():
-        if re.search(r"(?i)\b(original|default)\b", line):
-            print(ui.p("★ ORIGINAL / DEFAULT  ", "1;32") + ui.p(line, "1;32"))
-            continue
-        if re.search(r"(?i)\bav01(?:\.[\w.]+)?\b", line):
-            print(ui.p("[AV1] ", "1;35") + line)
-        elif re.search(r"(?i)\bavc1(?:\.[\w.]+)?\b", line):
-            print(ui.p("[H.264] ", "1;34") + line)
-        elif re.search(r"(?i)\bvp9(?:\.[\w.]+)?\b", line):
-            print(ui.p("[VP9] ", "1;36") + line)
+        # Never prepend labels, symbols, or padding: even one extra character can
+        # force yt-dlp's already aligned columns to wrap in narrow terminals.
+        if re.search(r"(?i)\b(original|default)\b", line) and re.search(r"(?i)audio", line):
+            print(ui.p(line, "1;32"))
+        elif re.search(r"(?i)av01(?:\.[\w.]+)?", line):
+            print(ui.p(line, "1;35"))
+        elif re.search(r"(?i)avc1(?:\.[\w.]+)?", line):
+            print(ui.p(line, "1;34"))
+        elif re.search(r"(?i)\bvp9(?:\.[\w.]+)?", line):
+            print(ui.p(line, "1;36"))
         else:
             print(line)
     if result.returncode:
         ui.warn(f"yt-dlp returned code {result.returncode} while listing formats.")
 
 
+def ask_format_id(label, default):
+    """Ask for one stream format ID/expression, never a VIDEO+AUDIO pair."""
+    while True:
+        value = input(f"{label} [{default}]: ").strip()
+        if not value:
+            return default
+        if any(ch.isspace() for ch in value) or "+" in value:
+            print("Enter one format ID/expression only; do not combine audio and video here.")
+            continue
+        if value.startswith("-"):
+            print("A format expression cannot start with '-'.")
+            continue
+        return value
+
+
 def select_format(exe, url, ui):
     print("\nFormat options")
-    print("  1) Best quality (recommended; merge separate streams when needed)")
-    print("  2) Best single-file format (no merge)")
-    print("  3) Best quality, prefer MP4 container")
-    print("  4) Enter a format code manually")
+    print("  1) Best available video + audio (automatic; recommended)")
+    print("  2) Choose video and audio formats separately")
+    print("  3) Best single-file format (no merging)")
+    print("  4) Best video + audio, prefer MP4 container")
     print("  5) Audio only")
     print("  6) Extract audio to MP3")
     print("  7) Video only")
-    c=choice("Select format [1]: ",set("1234567"),"1")
-    mapping={"1":(["-f","bv*+ba/b"],"Best quality"),"2":(["-f","b"],"Best single-file format"),
-             "3":(["-f","bv*+ba/b","--merge-output-format","mp4"],"Best quality (MP4)"),
-             "5":(["-f","bestaudio/best"],"Audio only"),"6":(["-f","bestaudio/best","-x","--audio-format","mp3"],"Audio to MP3"),
-             "7":(["-f","bestvideo"],"Video only")}
-    if c!="4": return mapping[c]
-    print("\nAvailable format codes (combine streams as VIDEO+AUDIO, e.g. 137+140):")
+    c = choice("Select format [1]: ", set("1234567"), "1")
+
+    mapping = {
+        "1": (["-f", "bv*+ba/b"], "Best available video + audio"),
+        "3": (["-f", "b"], "Best single-file format"),
+        "4": (["-f", "bv*+ba/b", "--merge-output-format", "mp4"], "Best video + audio (MP4)"),
+        "5": (["-f", "bestaudio/best"], "Audio only"),
+        "6": (["-f", "bestaudio/best", "-x", "--audio-format", "mp3"], "Audio to MP3"),
+        "7": (["-f", "bestvideo"], "Video only"),
+    }
+    if c != "2":
+        return mapping[c]
+
     show_formats(exe, url, ui)
-    while True:
-        code=input("Format code: ").strip()
-        if code and not code.startswith("-"): return ["-f",code],f"Custom format: {code}"
-        print("Enter a format code.")
+    print("\nEnter the video stream and audio stream separately.")
+    print("Use the format IDs shown above. Press Enter to use the best available stream.")
+    video_id = ask_format_id("Video format ID", "bestvideo*")
+    audio_id = ask_format_id("Audio format ID", "bestaudio")
+    return ["-f", f"{video_id}+{audio_id}/best"], f"Video {video_id} + audio {audio_id}"
 
 def run_session(a, ui):
     exe=resolve_exe(a.exe)
