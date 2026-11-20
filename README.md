@@ -11,6 +11,11 @@ YT-DL Easy Py makes common video and playlist downloads easier to configure with
 - Download an individual video or an entire playlist from a URL.
 - Detect YouTube links containing both a video ID and a playlist ID, then ask whether to download the video or playlist.
 - Read multiple URLs from a UTF-8 text file (one URL per line; blank lines and lines beginning with `#` are ignored).
+- Format-list highlighting to make codec and audio-language choices easier to scan:
+  - Audio tracks explicitly marked `original` or `default` by yt-dlp are highlighted with `★ ORIGINAL / DEFAULT`.
+  - Video formats using AV1 (`av01`), H.264 (`avc1`), and VP9 (`vp9`) receive distinct labels.
+  - The original yt-dlp format rows and format IDs remain visible and unchanged. The original/default marker is shown only when yt-dlp exposes that designation in its format-list output; the script does not guess which language is original.
+- After each session, choose whether to start another download; the default is **No** (press Enter to exit).
 - Interactive format presets:
   - Best available quality, merging separate video and audio streams when required.
   - Best single-file format without merging.
@@ -181,4 +186,4 @@ The code was written using web version of ChatGPT 😁.
 
 ---
 
-**Project status:** Initial release (`v1.0.0`). Bug reports and suggestions are welcome via GitHub Issues.
+**Project status:** Version `v1.1.0`. See [CHANGELOG.md](CHANGELOG.md) for release history. Bug reports and suggestions are welcome via GitHub Issues.
